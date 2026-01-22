@@ -32,6 +32,7 @@ All core phases are **COMPLETE**:
 - Code Generation (cURL, JS Fetch/Axios, Python, Go, PHP)
 - Import/Export (Postman Collection v2.1)
 - **GraphQL support** with query/variables editor and introspection
+- **gRPC support** with proto file loading and service/method selection
 - **Native macOS menu bar** with keyboard shortcuts
 - 122 unit tests passing across 8 test files
 - macOS code signing configured
@@ -39,27 +40,29 @@ All core phases are **COMPLETE**:
 
 ## What Was Just Completed
 
-**Native macOS Menu Bar**: Added proper Electron application menu:
+**gRPC Support**: Added full gRPC client functionality:
 
-- Created `src/main/menu.ts` with standard macOS menu structure
-- File menu: New Request (Cmd+T), New Collection (Cmd+Shift+N), Import (Cmd+I), Export (Cmd+E), Close Tab (Cmd+W)
-- Edit menu: Standard undo/redo/cut/copy/paste operations with native role bindings
-- View menu: Reload, zoom controls, fullscreen toggle, DevTools (dev only)
-- Window menu: Minimize, zoom, standard macOS window management
-- Help menu: Links to documentation and issue reporting
-- Added menu event listeners in preload (`src/preload/index.ts`) for menu→renderer communication
-- Created `ImportExportModal.tsx` component for import/export dialogs triggered from menu
-- Updated `AppLayout.tsx` to handle menu events and display import/export modal
-- Updated type definitions in `models.ts` for menu API
+- Created `src/main/services/grpc.ts` using `@grpc/grpc-js` and `protobufjs`
+- Proto file loading with service/method discovery
+- Service and method selection dropdowns in UI
+- Unary gRPC request execution with JSON message input
+- gRPC metadata (similar to HTTP headers) editor
+- Full auth support (basic, bearer, API key)
+- Pre/post request scripts with environment variable updates
+- Server reflection support (falls back to proto file if unavailable)
+- Created `src/renderer/components/grpc/GrpcPanel.tsx` and `MetadataEditor.tsx`
+- Added `createGrpcTab` and `sendGrpcRequest` to appStore
+- Integrated into AppLayout with keyboard shortcut (Cmd+Enter) support
+- Added "New gRPC" button to empty state
 
 ## What to Work on Next
 
 Potential next steps:
 
 1. **App Icon**: Create and configure a proper macOS app icon (.icns file in build/ directory)
-2. **gRPC Support**: Similar to GraphQL - add gRPC service, panel, and proto file loading. Type definitions already exist in models.ts.
-3. **Fix Remaining E2E Tests**: Refine selectors for failing tests (environment manager, history, code generation). Add data-testid attributes to components if needed.
-4. **GraphQL Enhancements**: Schema explorer sidebar, autocomplete in query editor, query history
+2. **Fix Remaining E2E Tests**: Refine selectors for failing tests (environment manager, history, code generation). Add data-testid attributes to components if needed.
+3. **GraphQL Enhancements**: Schema explorer sidebar, autocomplete in query editor, query history
+4. **gRPC Streaming**: Add support for server streaming, client streaming, and bidirectional streaming RPC methods
 5. **Performance Optimization**: Virtualized lists for large collections/history, response streaming, code splitting
 6. **Production Readiness**: Auto-updates (electron-updater), error reporting, user documentation
 7. **WebSocket/SSE Enhancements**: Binary messages, filtering/search, save to collections
@@ -96,10 +99,10 @@ npm run package:mac:signed  # Package with signing (requires APPLE_ID, APPLE_APP
 |------|-------|
 | Main Process | `src/main/index.ts`, `src/main/ipc/index.ts`, `src/main/menu.ts` |
 | Database | `src/main/database/init.ts`, `src/main/database/repositories.ts` |
-| Services | `src/main/services/http.ts`, `src/main/services/graphql.ts`, `src/main/services/scriptRunner.ts`, `src/main/services/oauth2.ts`, `src/main/services/websocket.ts`, `src/main/services/sse.ts`, `src/main/services/codeGeneration.ts`, `src/main/services/importExport.ts` |
+| Services | `src/main/services/http.ts`, `src/main/services/graphql.ts`, `src/main/services/grpc.ts`, `src/main/services/scriptRunner.ts`, `src/main/services/oauth2.ts`, `src/main/services/websocket.ts`, `src/main/services/sse.ts`, `src/main/services/codeGeneration.ts`, `src/main/services/importExport.ts` |
 | Preload | `src/preload/index.ts` |
 | Types | `src/shared/types/models.ts` |
-| UI | `src/renderer/components/layout/AppLayout.tsx`, `src/renderer/components/request/*.tsx`, `src/renderer/components/graphql/GraphQLPanel.tsx`, `src/renderer/components/response/ResponsePanel.tsx` |
+| UI | `src/renderer/components/layout/AppLayout.tsx`, `src/renderer/components/request/*.tsx`, `src/renderer/components/graphql/GraphQLPanel.tsx`, `src/renderer/components/grpc/GrpcPanel.tsx`, `src/renderer/components/response/ResponsePanel.tsx` |
 | Stores | `src/renderer/stores/appStore.ts`, `src/renderer/stores/environmentStore.ts`, `src/renderer/stores/collectionStore.ts` |
 | Build | `electron-vite.config.ts`, `build/notarize.js`, `build/entitlements.mac.plist` |
 | E2E Tests | `e2e/electron-fixture.ts`, `e2e/app.spec.ts`, `e2e/advanced-features.spec.ts`, `playwright.config.ts` |
