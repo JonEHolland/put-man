@@ -8,12 +8,13 @@ import {
   historyRepo
 } from '../database/repositories'
 import { httpService } from '../services/http'
+import { graphqlService } from '../services/graphql'
 import { importExportService } from '../services/importExport'
 import { codeGenerationService, type CodeLanguage } from '../services/codeGeneration'
 import { oauth2Service } from '../services/oauth2'
 import { websocketService } from '../services/websocket'
 import { sseService } from '../services/sse'
-import type { Collection, Folder, Request, HttpRequest, WebSocketRequest, SSERequest, Environment, Response, OAuth2Config } from '../../shared/types/models'
+import type { Collection, Folder, Request, HttpRequest, GraphQLRequest, WebSocketRequest, SSERequest, Environment, Response, OAuth2Config, KeyValuePair } from '../../shared/types/models'
 
 export function registerIpcHandlers(): void {
   // Collections
@@ -118,6 +119,19 @@ export function registerIpcHandlers(): void {
 
   ipcMain.handle('http:cancel', async (_, requestId: string) => {
     httpService.cancel(requestId)
+  })
+
+  // GraphQL
+  ipcMain.handle('graphql:send', async (_, request: GraphQLRequest, environment?: Environment) => {
+    return graphqlService.send(request, environment)
+  })
+
+  ipcMain.handle('graphql:introspect', async (_, url: string, headers?: KeyValuePair[], environment?: Environment) => {
+    return graphqlService.introspect(url, headers, environment)
+  })
+
+  ipcMain.handle('graphql:cancel', async (_, requestId: string) => {
+    graphqlService.cancel(requestId)
   })
 
   // File operations

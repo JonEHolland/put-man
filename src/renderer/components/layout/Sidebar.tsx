@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useCollectionStore } from '../../stores/collectionStore'
 import { useHistoryStore } from '../../stores/historyStore'
 import { useAppStore } from '../../stores/appStore'
@@ -27,6 +27,8 @@ export default function Sidebar() {
   const [isCreating, setIsCreating] = useState(false)
   const [newCollectionName, setNewCollectionName] = useState('')
   const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null)
+  const [showNewRequestMenu, setShowNewRequestMenu] = useState(false)
+  const newRequestMenuRef = useRef<HTMLDivElement>(null)
 
   const {
     collections,
@@ -38,7 +40,20 @@ export default function Sidebar() {
     loadCollections
   } = useCollectionStore()
   const { history, loadHistory } = useHistoryStore()
-  const { createNewTab } = useAppStore()
+  const { createNewTab, createGraphQLTab, createWebSocketTab, createSSETab } = useAppStore()
+
+  // Close the menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (newRequestMenuRef.current && !newRequestMenuRef.current.contains(e.target as Node)) {
+        setShowNewRequestMenu(false)
+      }
+    }
+    if (showNewRequestMenu) {
+      document.addEventListener('mousedown', handleClickOutside)
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [showNewRequestMenu])
 
   useEffect(() => {
     loadCollections()
@@ -78,15 +93,60 @@ export default function Sidebar() {
         <span className="font-semibold text-white">Put-Man</span>
       </div>
 
-      {/* New Request Button */}
-      <div className="p-2 border-b border-panel-border">
+      {/* New Request Button with Dropdown */}
+      <div className="p-2 border-b border-panel-border relative" ref={newRequestMenuRef}>
         <button
           className="w-full btn btn-primary flex items-center justify-center gap-2"
-          onClick={createNewTab}
+          onClick={() => setShowNewRequestMenu(!showNewRequestMenu)}
         >
           <PlusIcon />
           New Request
+          <ChevronDownIcon />
         </button>
+        {showNewRequestMenu && (
+          <div className="absolute left-2 right-2 top-full mt-1 bg-gray-800 border border-panel-border rounded-md shadow-lg z-50 overflow-hidden">
+            <button
+              className="w-full px-3 py-2 text-left text-sm hover:bg-gray-700 flex items-center gap-2"
+              onClick={() => {
+                createNewTab()
+                setShowNewRequestMenu(false)
+              }}
+            >
+              <span className="text-green-400 font-semibold text-xs w-10">HTTP</span>
+              HTTP Request
+            </button>
+            <button
+              className="w-full px-3 py-2 text-left text-sm hover:bg-gray-700 flex items-center gap-2"
+              onClick={() => {
+                createGraphQLTab()
+                setShowNewRequestMenu(false)
+              }}
+            >
+              <span className="text-pink-400 font-semibold text-xs w-10">GQL</span>
+              GraphQL
+            </button>
+            <button
+              className="w-full px-3 py-2 text-left text-sm hover:bg-gray-700 flex items-center gap-2"
+              onClick={() => {
+                createWebSocketTab()
+                setShowNewRequestMenu(false)
+              }}
+            >
+              <span className="text-purple-400 font-semibold text-xs w-10">WS</span>
+              WebSocket
+            </button>
+            <button
+              className="w-full px-3 py-2 text-left text-sm hover:bg-gray-700 flex items-center gap-2"
+              onClick={() => {
+                createSSETab()
+                setShowNewRequestMenu(false)
+              }}
+            >
+              <span className="text-cyan-400 font-semibold text-xs w-10">SSE</span>
+              Server-Sent Events
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Section tabs */}
@@ -987,6 +1047,14 @@ function ChevronIcon({ expanded }: { expanded: boolean }) {
       viewBox="0 0 24 24"
     >
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+    </svg>
+  )
+}
+
+function ChevronDownIcon() {
+  return (
+    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
     </svg>
   )
 }

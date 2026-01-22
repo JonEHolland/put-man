@@ -332,7 +332,8 @@ export interface ElectronAPI {
   // GraphQL operations
   graphql: {
     send: (request: GraphQLRequest, environment?: Environment) => Promise<Response>
-    introspect: (url: string, headers?: KeyValuePair[]) => Promise<string>
+    introspect: (url: string, headers?: KeyValuePair[], environment?: Environment) => Promise<string>
+    cancel: (requestId: string) => Promise<void>
   }
 
   // gRPC operations

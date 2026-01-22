@@ -3,6 +3,7 @@ import Sidebar from './Sidebar'
 import TabBar from './TabBar'
 import RequestPanel from '../request/RequestPanel'
 import ResponsePanel from '../response/ResponsePanel'
+import GraphQLPanel from '../graphql/GraphQLPanel'
 import WebSocketPanel from '../websocket/WebSocketPanel'
 import SSEPanel from '../sse/SSEPanel'
 import ToastContainer from '../common/Toast'
@@ -11,7 +12,7 @@ import { useCollectionStore } from '../../stores/collectionStore'
 import { useEnvironmentStore } from '../../stores/environmentStore'
 
 export default function AppLayout() {
-  const { activeTab, tabs, createNewTab, closeTab, sendRequest, duplicateTab } = useAppStore()
+  const { activeTab, tabs, createNewTab, closeTab, sendRequest, sendGraphQLRequest, duplicateTab } = useAppStore()
   const { loadCollections } = useCollectionStore()
   const { loadEnvironments, activeEnvironment } = useEnvironmentStore()
 
@@ -45,7 +46,12 @@ export default function AppLayout() {
       if (isMod && e.key === 'Enter') {
         e.preventDefault()
         if (activeTab) {
-          sendRequest(activeTab, activeEnvironment)
+          const currentTab = tabs.find((t) => t.id === activeTab)
+          if (currentTab?.request.type === 'graphql') {
+            sendGraphQLRequest(activeTab, activeEnvironment)
+          } else if (currentTab?.request.type === 'http') {
+            sendRequest(activeTab, activeEnvironment)
+          }
         }
         return
       }
@@ -69,7 +75,7 @@ export default function AppLayout() {
         return
       }
     },
-    [activeTab, tabs, createNewTab, closeTab, sendRequest, duplicateTab, activeEnvironment]
+    [activeTab, tabs, createNewTab, closeTab, sendRequest, sendGraphQLRequest, duplicateTab, activeEnvironment]
   )
 
   useEffect(() => {
@@ -97,6 +103,11 @@ export default function AppLayout() {
                 <WebSocketPanel tab={currentTab} />
               ) : currentTab.request.type === 'sse' ? (
                 <SSEPanel tab={currentTab} />
+              ) : currentTab.request.type === 'graphql' ? (
+                <>
+                  <GraphQLPanel tab={currentTab} />
+                  <ResponsePanel request={currentTab.request} response={currentTab.response} />
+                </>
               ) : (
                 <>
                   <RequestPanel tab={currentTab} />
@@ -115,16 +126,19 @@ export default function AppLayout() {
 }
 
 function EmptyState() {
-  const { createNewTab, createWebSocketTab, createSSETab } = useAppStore()
+  const { createNewTab, createGraphQLTab, createWebSocketTab, createSSETab } = useAppStore()
 
   return (
     <div className="flex-1 flex items-center justify-center text-gray-500">
       <div className="text-center">
         <h2 className="text-xl font-semibold text-gray-400 mb-2">No Request Open</h2>
         <p className="mb-4">Create a new request or select one from the sidebar</p>
-        <div className="flex gap-3 justify-center">
+        <div className="flex gap-3 justify-center flex-wrap">
           <button className="btn btn-primary" onClick={createNewTab}>
             New HTTP Request
+          </button>
+          <button className="btn btn-secondary" onClick={createGraphQLTab}>
+            New GraphQL
           </button>
           <button className="btn btn-secondary" onClick={createWebSocketTab}>
             New WebSocket

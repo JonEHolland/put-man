@@ -73,8 +73,9 @@ const api: ElectronAPI = {
   graphql: {
     send: (request: Request, environment?: Environment) =>
       ipcRenderer.invoke('graphql:send', request, environment),
-    introspect: (url: string, headers?: any[]) =>
-      ipcRenderer.invoke('graphql:introspect', url, headers)
+    introspect: (url: string, headers?: any[], environment?: Environment) =>
+      ipcRenderer.invoke('graphql:introspect', url, headers, environment),
+    cancel: (requestId: string) => ipcRenderer.invoke('graphql:cancel', requestId)
   },
 
   grpc: {

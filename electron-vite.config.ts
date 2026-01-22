@@ -4,7 +4,14 @@ import { resolve } from 'path'
 
 export default defineConfig({
   main: {
-    plugins: [externalizeDepsPlugin()]
+    plugins: [externalizeDepsPlugin({
+      exclude: ['ws']
+    })],
+    build: {
+      rollupOptions: {
+        external: ['bufferutil', 'utf-8-validate']
+      }
+    }
   },
   preload: {
     plugins: [externalizeDepsPlugin()]

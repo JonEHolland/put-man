@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { v4 as uuidv4 } from 'uuid'
-import type { Tab, Request, HttpRequest, WebSocketRequest, SSERequest, Environment, Response } from '../../shared/types/models'
+import type { Tab, Request, HttpRequest, GraphQLRequest, WebSocketRequest, SSERequest, Environment, Response } from '../../shared/types/models'
 import { useToastStore } from './toastStore'
 import { useEnvironmentStore } from './environmentStore'
 
@@ -14,6 +14,21 @@ function createNewHttpRequest(): HttpRequest {
     params: [],
     headers: [],
     body: { type: 'none', content: '' },
+    auth: { type: 'none' },
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  }
+}
+
+function createNewGraphQLRequest(): GraphQLRequest {
+  return {
+    id: uuidv4(),
+    name: 'GraphQL',
+    type: 'graphql',
+    url: '',
+    query: '',
+    variables: '',
+    headers: [],
     auth: { type: 'none' },
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString()
@@ -38,6 +53,17 @@ function createNewTab(): Tab {
   return {
     id: uuidv4(),
     title: 'Untitled',
+    request,
+    isDirty: false,
+    isLoading: false
+  }
+}
+
+function createNewGraphQLTab(): Tab {
+  const request = createNewGraphQLRequest()
+  return {
+    id: uuidv4(),
+    title: 'GraphQL',
     request,
     isDirty: false,
     isLoading: false
@@ -96,6 +122,7 @@ interface AppState {
 
   // Tab actions
   createNewTab: () => void
+  createGraphQLTab: () => void
   createWebSocketTab: () => void
   createSSETab: () => void
   closeTab: (id: string) => void
@@ -111,6 +138,8 @@ interface AppState {
   // Request actions
   sendRequest: (tabId: string, environment?: Environment | null) => Promise<void>
   cancelRequest: (tabId: string) => void
+  sendGraphQLRequest: (tabId: string, environment?: Environment | null) => Promise<void>
+  cancelGraphQLRequest: (tabId: string) => void
 }
 
 export const useAppStore = create<AppState>((set, get) => ({
@@ -119,6 +148,14 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   createNewTab: () => {
     const newTab = createNewTab()
+    set((state) => ({
+      tabs: [...state.tabs, newTab],
+      activeTab: newTab.id
+    }))
+  },
+
+  createGraphQLTab: () => {
+    const newTab = createNewGraphQLTab()
     set((state) => ({
       tabs: [...state.tabs, newTab],
       activeTab: newTab.id
@@ -343,6 +380,106 @@ export const useAppStore = create<AppState>((set, get) => ({
     if (controller) {
       controller.abort()
       abortControllers.delete(tabId)
+      useToastStore.getState().info('Request cancelled')
+      get().updateTab(tabId, { isLoading: false })
+    }
+  },
+
+  sendGraphQLRequest: async (tabId: string, environment?: Environment | null) => {
+    const { tabs, updateTab } = get()
+    const tab = tabs.find((t) => t.id === tabId)
+    if (!tab) return
+
+    const graphqlRequest = tab.request as GraphQLRequest
+    if (!graphqlRequest.url) {
+      useToastStore.getState().warning('Please enter a URL')
+      return
+    }
+
+    if (!graphqlRequest.query.trim()) {
+      useToastStore.getState().warning('Please enter a GraphQL query')
+      return
+    }
+
+    // Cancel any existing request for this tab
+    const existingController = abortControllers.get(tabId)
+    if (existingController) {
+      existingController.abort()
+    }
+
+    // Create new abort controller
+    const controller = new AbortController()
+    abortControllers.set(tabId, controller)
+
+    // Set loading state
+    updateTab(tabId, { isLoading: true })
+
+    try {
+      const response: Response = await window.api.graphql.send(
+        graphqlRequest,
+        environment || undefined
+      )
+
+      // Check if request was cancelled
+      if (controller.signal.aborted) {
+        return
+      }
+
+      updateTab(tabId, { response, isLoading: false })
+
+      // Apply environment updates from scripts
+      const scriptUpdates = {
+        ...(response.preRequestScriptResult?.environmentUpdates || {}),
+        ...(response.testScriptResult?.environmentUpdates || {})
+      }
+      if (Object.keys(scriptUpdates).length > 0) {
+        await useEnvironmentStore.getState().applyScriptUpdates(scriptUpdates)
+      }
+
+      // Add to history
+      await window.api.db.addToHistory(tab.request, response)
+
+      // Show success/error toast based on status
+      if (response.status >= 200 && response.status < 300) {
+        useToastStore.getState().success(`${response.status} ${response.statusText}`)
+      } else if (response.status >= 400) {
+        useToastStore.getState().error(`${response.status} ${response.statusText}`)
+      }
+    } catch (error: unknown) {
+      // Check if request was cancelled
+      if (controller.signal.aborted) {
+        updateTab(tabId, { isLoading: false })
+        return
+      }
+
+      const errorMessage = error instanceof Error ? error.message : 'Request failed'
+      useToastStore.getState().error(errorMessage)
+
+      const errorResponse: Response = {
+        id: uuidv4(),
+        requestId: tab.request.id,
+        status: 0,
+        statusText: errorMessage,
+        headers: {},
+        body: errorMessage,
+        size: 0,
+        time: 0,
+        timestamp: new Date().toISOString()
+      }
+      updateTab(tabId, { response: errorResponse, isLoading: false })
+    } finally {
+      abortControllers.delete(tabId)
+    }
+  },
+
+  cancelGraphQLRequest: (tabId: string) => {
+    const controller = abortControllers.get(tabId)
+    if (controller) {
+      controller.abort()
+      abortControllers.delete(tabId)
+      window.api.graphql.cancel(tabId).catch(() => {
+        // Ignore cancel errors
+      })
       useToastStore.getState().info('Request cancelled')
       get().updateTab(tabId, { isLoading: false })
     }
