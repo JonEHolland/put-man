@@ -28,19 +28,45 @@ All core phases are **COMPLETE**:
 - Request Chaining (environment variable persistence from scripts)
 - Code Generation (cURL, JS Fetch/Axios, Python, Go, PHP)
 - Import/Export (Postman Collection v2.1)
-- 122 tests passing across 8 test files
+- 122 unit tests passing across 8 test files
 - macOS code signing configured
+- **E2E Testing Framework** with Playwright for Electron
 
 ## What Was Just Completed
 
-**Request Chaining**: Variables set via `pm.environment.set()` in scripts now automatically persist to the active environment, enabling chained request workflows (e.g., extract auth token from login response, use in subsequent requests).
+**E2E Testing with Playwright**: Set up comprehensive end-to-end testing infrastructure:
+
+- Installed `@playwright/test` with custom Electron fixture
+- Created 2 test files with 50+ test cases covering:
+  - App launch and welcome screen
+  - Tab management (create, close, switch, drag-reorder)
+  - HTTP Request Builder (method, URL, params, headers, body, auth)
+  - Send/Cancel requests with actual HTTP calls to httpbin.org
+  - Collections (create, expand, save requests, folders)
+  - History tracking
+  - Environments (create, add variables, select)
+  - Response Panel (headers, body views, code generation)
+  - WebSocket and SSE tab creation
+  - Authentication (Basic, Bearer, API Key, OAuth2)
+  - Keyboard shortcuts (Cmd+T, Cmd+W, Cmd+Enter)
+  - Environment variable interpolation
+  - Import/Export functionality
+
+**Test Commands:**
+```bash
+npm run test:e2e          # Build and run all E2E tests
+npm run test:e2e:headed   # Run with visible browser
+npx playwright test e2e/app.spec.ts --grep "pattern"  # Run specific tests
+```
+
+**Current Status:** 19 tests passing, 10 tests need selector refinements for elements like environment manager modal, history entries, and code generation dropdown. The core infrastructure is solid.
 
 ## What to Work on Next
 
 Potential next steps:
 
-1. **E2E Testing**: Set up Playwright for Electron to run deep end-to-end tests. Explore the app programmatically to find functional issues, test all features (HTTP requests, WebSocket/SSE connections, scripts, collections, environments, auth flows).
-2. **Performance Optimization**: Virtualized lists, response streaming, code splitting
+1. **Fix Remaining E2E Tests**: Refine selectors for failing tests (environment manager, history, code generation). Add data-testid attributes to components if needed for more reliable selection.
+2. **Performance Optimization**: Virtualized lists for large collections/history, response streaming, code splitting
 3. **Additional Features**: GraphQL IDE features, response diff view, AWS Signature V4 auth, collection runner
 4. **Production Readiness**: Auto-updates (electron-updater), error reporting, user documentation
 5. **WebSocket/SSE Enhancements**: Binary messages, filtering/search, save to collections
@@ -50,7 +76,8 @@ Potential next steps:
 ```bash
 npm run dev           # Development
 npm run build         # Build
-npm run test:run      # Run tests
+npm run test:run      # Run unit tests
+npm run test:e2e      # Run E2E tests (builds first)
 npm run package:mac   # Package (unsigned)
 npm run package:mac:signed  # Package with signing (requires APPLE_ID, APPLE_APP_SPECIFIC_PASSWORD, APPLE_TEAM_ID env vars)
 ```
@@ -63,7 +90,9 @@ npm run package:mac:signed  # Package with signing (requires APPLE_ID, APPLE_APP
 
 3. **Preload**: Outputs as `.mjs` (ESM) - main process references `../preload/index.mjs`
 
-4. **Testing**: Vitest with jsdom, mocked window.api object
+4. **Testing**: Vitest with jsdom for unit tests, Playwright for E2E Electron tests
+
+5. **E2E Testing**: Custom Playwright fixture launches Electron app, tests run against built app (`out/main/index.js`)
 
 ## Critical Files
 
@@ -77,6 +106,7 @@ npm run package:mac:signed  # Package with signing (requires APPLE_ID, APPLE_APP
 | UI | `src/renderer/components/layout/AppLayout.tsx`, `src/renderer/components/request/*.tsx`, `src/renderer/components/response/ResponsePanel.tsx` |
 | Stores | `src/renderer/stores/appStore.ts`, `src/renderer/stores/environmentStore.ts`, `src/renderer/stores/collectionStore.ts` |
 | Build | `electron-vite.config.ts`, `build/notarize.js`, `build/entitlements.mac.plist` |
+| **E2E Tests** | `e2e/electron-fixture.ts`, `e2e/app.spec.ts`, `e2e/advanced-features.spec.ts`, `playwright.config.ts` |
 
 ## Architecture
 
@@ -85,3 +115,4 @@ npm run package:mac:signed  # Package with signing (requires APPLE_ID, APPLE_APP
 - **HTTP**: Executed in main process (axios) to avoid CORS
 - **Scripts**: Run in Node's VM sandbox, 5s timeout, environment updates persisted via `applyScriptUpdates()`
 - **WebSocket/SSE**: Managed in main process, events pushed to renderer via IPC
+- **E2E Tests**: Playwright launches Electron, waits for window, uses helper functions like `ensureTabOpen()` since app starts with no tabs
