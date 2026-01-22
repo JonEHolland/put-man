@@ -26,6 +26,8 @@ All core phases are **COMPLETE**:
 - Pre/Post Request Scripts with sandboxed JS execution
 - WebSocket and SSE support
 - Request Chaining (environment variable persistence from scripts)
+- Code Generation (cURL, JS Fetch/Axios, Python, Go, PHP)
+- Import/Export (Postman Collection v2.1)
 - 122 tests passing across 8 test files
 - macOS code signing configured
 
@@ -69,7 +71,7 @@ npm run package:mac:signed  # Package with signing (requires APPLE_ID, APPLE_APP
 |------|-------|
 | Main Process | `src/main/index.ts`, `src/main/ipc/index.ts` |
 | Database | `src/main/database/init.ts`, `src/main/database/repositories.ts` |
-| Services | `src/main/services/http.ts`, `src/main/services/scriptRunner.ts`, `src/main/services/oauth2.ts`, `src/main/services/websocket.ts`, `src/main/services/sse.ts` |
+| Services | `src/main/services/http.ts`, `src/main/services/scriptRunner.ts`, `src/main/services/oauth2.ts`, `src/main/services/websocket.ts`, `src/main/services/sse.ts`, `src/main/services/codeGeneration.ts`, `src/main/services/importExport.ts` |
 | Preload | `src/preload/index.ts` |
 | Types | `src/shared/types/models.ts` |
 | UI | `src/renderer/components/layout/AppLayout.tsx`, `src/renderer/components/request/*.tsx`, `src/renderer/components/response/ResponsePanel.tsx` |
