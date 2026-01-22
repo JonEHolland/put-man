@@ -4,6 +4,8 @@ A privacy-respecting, open-source API client for macOS. A modern alternative to 
 
 ![Put-Man](https://img.shields.io/badge/platform-macOS-blue) ![License](https://img.shields.io/badge/license-MIT-green) ![Electron](https://img.shields.io/badge/electron-28-blue)
 
+![Put-Man Screenshot](docs/screenshot.png)
+
 ## Features
 
 ### Core Features
@@ -19,9 +21,11 @@ A privacy-respecting, open-source API client for macOS. A modern alternative to 
 - **Request Chaining** - Variables set in scripts automatically persist to environments
 - **WebSocket Support** - Connect, send messages, view real-time responses
 - **Server-Sent Events (SSE)** - Subscribe to SSE endpoints with live event streaming
+- **GraphQL Support** - Query editor with variables, schema introspection
 - **Authentication** - Basic Auth, Bearer Token, API Key, OAuth 2.0 (Client Credentials)
 - **Code Generation** - Export requests as cURL, JavaScript (Fetch/Axios), Python, Go, PHP
 - **Import/Export** - Full Postman Collection v2.1 compatibility
+- **Native macOS Menu** - Full menu bar with keyboard shortcuts for all actions
 
 ### Privacy & Security
 - **100% Local** - All data stored locally in SQLite, never sent to external servers
@@ -105,10 +109,13 @@ pm.environment.set("auth_token", token);
 | Action | Shortcut |
 |--------|----------|
 | New Request | `Cmd+T` |
+| New Collection | `Cmd+Shift+N` |
 | Close Tab | `Cmd+W` |
 | Send Request | `Cmd+Enter` |
 | Duplicate Tab | `Cmd+D` |
 | Switch Tabs | `Cmd+1-9` |
+| Import | `Cmd+I` |
+| Export | `Cmd+E` |
 
 ## Technical Details
 
