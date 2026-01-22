@@ -13,6 +13,8 @@ interface EnvironmentState {
   deleteEnvironment: (id: string) => Promise<void>
   setActiveEnvironment: (id: string | null) => Promise<void>
   updateVariables: (id: string, variables: EnvironmentVariable[]) => Promise<void>
+  // Apply environment updates from script execution (for request chaining)
+  applyScriptUpdates: (updates: Record<string, string>) => Promise<void>
 }
 
 export const useEnvironmentStore = create<EnvironmentState>((set, get) => ({
@@ -83,5 +85,41 @@ export const useEnvironmentStore = create<EnvironmentState>((set, get) => ({
           ? { ...state.activeEnvironment, variables }
           : state.activeEnvironment
     }))
+  },
+
+  applyScriptUpdates: async (updates: Record<string, string>) => {
+    const { activeEnvironment, updateVariables } = get()
+
+    // No updates to apply or no active environment
+    if (!updates || Object.keys(updates).length === 0 || !activeEnvironment) {
+      return
+    }
+
+    // Merge updates into existing variables
+    const existingVariables = [...activeEnvironment.variables]
+
+    for (const [key, value] of Object.entries(updates)) {
+      const existingIndex = existingVariables.findIndex((v) => v.key === key)
+
+      if (existingIndex >= 0) {
+        // Update existing variable
+        existingVariables[existingIndex] = {
+          ...existingVariables[existingIndex],
+          value,
+          enabled: value !== '' // Auto-disable if empty (unset)
+        }
+      } else if (value !== '') {
+        // Add new variable (only if value is not empty)
+        existingVariables.push({
+          id: crypto.randomUUID(),
+          key,
+          value,
+          enabled: true
+        })
+      }
+    }
+
+    // Persist the updated variables
+    await updateVariables(activeEnvironment.id, existingVariables)
   }
 }))

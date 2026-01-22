@@ -3,6 +3,8 @@ import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { initDatabase, closeDatabase } from './database/init'
 import { registerIpcHandlers } from './ipc'
+import { websocketService } from './services/websocket'
+import { sseService } from './services/sse'
 
 let mainWindow: BrowserWindow | null = null
 
@@ -15,7 +17,7 @@ function createWindow(): void {
     show: false,
     autoHideMenuBar: true,
     titleBarStyle: 'hiddenInset',
-    trafficLightPosition: { x: 15, y: 15 },
+    trafficLightPosition: { x: 18, y: 14 },
     webPreferences: {
       preload: join(__dirname, '../preload/index.mjs'),
       sandbox: false,
@@ -75,5 +77,7 @@ app.on('window-all-closed', () => {
 })
 
 app.on('before-quit', () => {
+  websocketService.closeAll()
+  sseService.closeAll()
   closeDatabase()
 })

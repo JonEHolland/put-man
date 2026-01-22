@@ -11,14 +11,24 @@
     "productName": "Put-Man",
     "mac": {
       "category": "public.app-category.developer-tools",
-      "target": ["dmg", "zip"],
-      "hardenedRuntime": true
+      "target": [
+        "dmg",
+        "zip"
+      ],
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false,
+      "entitlements": "build/entitlements.mac.plist",
+      "entitlementsInherit": "build/entitlements.mac.inherit.plist"
     },
+    "afterSign": "build/notarize.js",
     "directories": {
       "output": "dist"
     },
     "files": [
       "out/**/*"
+    ],
+    "asarUnpack": [
+      "**/*.node"
     ]
   },
   "scripts": {
@@ -27,27 +37,40 @@
     "preview": "electron-vite preview",
     "package": "electron-builder",
     "package:mac": "electron-builder --mac",
+    "package:mac:signed": "electron-builder --mac --publish never",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint . --ext .ts,.tsx"
+    "lint": "eslint . --ext .ts,.tsx",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "postinstall": "electron-rebuild",
+    "rebuild": "electron-rebuild"
   },
   "dependencies": {
     "@grpc/grpc-js": "^1.9.0",
     "@monaco-editor/react": "^4.6.0",
     "axios": "^1.6.0",
+    "better-sqlite3": "^12.6.2",
     "graphql": "^16.8.0",
     "monaco-editor": "^0.45.0",
     "protobufjs": "^7.2.0",
     "uuid": "^9.0.0",
+    "ws": "^8.19.0",
     "zustand": "^4.5.0"
   },
   "devDependencies": {
     "@electron-toolkit/preload": "^3.0.0",
     "@electron-toolkit/utils": "^3.0.0",
+    "@electron/notarize": "^3.1.1",
+    "@electron/rebuild": "^4.0.2",
     "@tailwindcss/forms": "^0.5.7",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^20.10.0",
     "@types/react": "^18.2.0",
     "@types/react-dom": "^18.2.0",
     "@types/uuid": "^9.0.0",
+    "@types/ws": "^8.18.1",
     "@typescript-eslint/eslint-plugin": "^6.0.0",
     "@typescript-eslint/parser": "^6.0.0",
     "@vitejs/plugin-react": "^4.2.0",
@@ -57,11 +80,17 @@
     "electron-vite": "^2.0.0",
     "eslint": "^8.56.0",
     "eslint-plugin-react": "^7.33.0",
+    "jsdom": "^27.4.0",
     "postcss": "^8.4.32",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "tailwindcss": "^3.4.0",
     "typescript": "^5.3.0",
-    "vite": "^5.0.0"
+    "vite": "^5.0.0",
+    "vitest": "^4.0.17"
+  },
+  "optionalDependencies": {
+    "bufferutil": "^4.0.9",
+    "utf-8-validate": "^6.0.5"
   }
 }

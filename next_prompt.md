@@ -2,7 +2,7 @@
 
 ---
 
-## ⚠️ IMPORTANT WARNING - READ FIRST ⚠️
+## IMPORTANT WARNING - READ FIRST
 
 **Do not change the plan with an easier option or make "pragmatic choices".**
 
@@ -13,82 +13,73 @@ When you encounter difficulties:
 2. Research the correct solution
 3. Ask for help if needed
 4. **Never** deviate from the plan by choosing an "easier" alternative
+5. ALWAYS MAKE SURE THE APP STARTS WITHOUT ERRORS!
 
-**Always include this warning in the next_prompt.md for future agents. Let's never make this mistake again.**
+**Always include this warning in the next_prompt.md for future agents.**
 
 ---
 
 ## Current State
 
-Phase 1: Foundation is **COMPLETE**. The app builds and runs successfully.
+All core phases are **COMPLETE**:
+- Foundation, Core Request Builder, Collections & Requests, Advanced Features
+- Pre/Post Request Scripts with sandboxed JS execution
+- WebSocket and SSE support
+- Request Chaining (environment variable persistence from scripts)
+- 122 tests passing across 8 test files
+- macOS code signing configured
 
 ## What Was Just Completed
 
-### Phase 1: Foundation
-- **Project setup**: electron-vite with React 18, TypeScript, and TailwindCSS
-- **Electron shell**: Main/preload/renderer architecture with proper context isolation
-- **Data persistence**: JSON file-based storage (Note: switched from SQLite due to sql.js bundling issues with ESM/Electron)
-- **Basic UI**: 3-panel layout with sidebar, request panel, and response panel
-- **Zustand stores**: App state, collections, environments, and history management
+**Request Chaining**: Variables set via `pm.environment.set()` in scripts now automatically persist to the active environment, enabling chained request workflows (e.g., extract auth token from login response, use in subsequent requests).
 
-### Key Files Created
-- `src/main/index.ts` - Electron main process
-- `src/preload/index.ts` - IPC bridge (context bridge)
-- `src/main/database/init.ts` - JSON file storage
-- `src/main/database/repositories.ts` - Data access layer
-- `src/main/services/http.ts` - HTTP request execution with axios
-- `src/main/ipc/index.ts` - IPC handlers
-- `src/shared/types/models.ts` - Core TypeScript interfaces
-- `src/renderer/components/layout/` - AppLayout, Sidebar, TabBar
-- `src/renderer/components/request/` - RequestPanel, UrlBar, ParamsEditor, HeadersEditor, BodyEditor, AuthPanel
-- `src/renderer/components/response/` - ResponsePanel with body/headers/cookies tabs
-- `src/renderer/stores/` - Zustand stores for app, collections, environments, history
+## What to Work on Next
 
-## What Phase to Work on Next
+Potential next steps:
 
-**Phase 2: Core Request Builder** - Enhance the request builder UI
+1. **E2E Testing**: Set up Playwright for Electron to run deep end-to-end tests. Explore the app programmatically to find functional issues, test all features (HTTP requests, WebSocket/SSE connections, scripts, collections, environments, auth flows).
+2. **Performance Optimization**: Virtualized lists, response streaming, code splitting
+3. **Additional Features**: GraphQL IDE features, response diff view, AWS Signature V4 auth, collection runner
+4. **Production Readiness**: Auto-updates (electron-updater), error reporting, user documentation
+5. **WebSocket/SSE Enhancements**: Binary messages, filtering/search, save to collections
 
-Focus areas:
-1. Monaco Editor integration for code/body editing (JSON syntax highlighting)
-2. Improve body editors (proper JSON validation, form-data file uploads)
-3. Response JSON viewer with syntax highlighting and collapsible nodes
-4. Better URL variable highlighting (show `{{variable}}` in distinct color)
+## Running the App
 
-## Important Context & Decisions
+```bash
+npm run dev           # Development
+npm run build         # Build
+npm run test:run      # Run tests
+npm run package:mac   # Package (unsigned)
+npm run package:mac:signed  # Package with signing (requires APPLE_ID, APPLE_APP_SPECIFIC_PASSWORD, APPLE_TEAM_ID env vars)
+```
 
-1. **Storage**: ⚠️ **MISTAKE TO FIX** - Currently using JSON file storage instead of SQLite (better-sqlite3). This was a wrong decision made by a previous agent who took the "easy way out" instead of fixing the bundling issues. The plan specifies SQLite with better-sqlite3. A future phase should fix this by properly configuring electron-rebuild or resolving the native module bundling issues.
+## Key Technical Decisions
 
-2. **Preload output**: The preload script outputs as `.mjs` (ESM) - the main process references it as `../preload/index.mjs`
+1. **Storage**: SQLite via better-sqlite3, loaded at runtime using `createRequire()` to bypass Vite bundling issues. Data at: `~/Library/Application Support/put-man/data/put-man.db`
 
-3. **Running the app**:
-   - Development: `npm run dev`
-   - Build: `npm run build`
-   - Package: `npm run package:mac`
+2. **Native Modules**: `@electron/rebuild` in postinstall, `asarUnpack` for .node files
 
-4. **Data location**: `~/Library/Application Support/put-man/data/put-man.json`
+3. **Preload**: Outputs as `.mjs` (ESM) - main process references `../preload/index.mjs`
 
-## Critical Files to Review
+4. **Testing**: Vitest with jsdom, mocked window.api object
 
-1. `src/main/index.ts` - Electron main process entry
-2. `src/preload/index.ts` - IPC bridge (security boundary)
-3. `src/main/database/init.ts` - JSON storage init
-4. `src/shared/types/models.ts` - Core TypeScript interfaces
-5. `src/renderer/components/layout/AppLayout.tsx` - Main UI shell
-6. `src/renderer/stores/appStore.ts` - Main app state with sendRequest
+## Critical Files
 
-## Architecture Notes
+| Area | Files |
+|------|-------|
+| Main Process | `src/main/index.ts`, `src/main/ipc/index.ts` |
+| Database | `src/main/database/init.ts`, `src/main/database/repositories.ts` |
+| Services | `src/main/services/http.ts`, `src/main/services/scriptRunner.ts`, `src/main/services/oauth2.ts`, `src/main/services/websocket.ts`, `src/main/services/sse.ts` |
+| Preload | `src/preload/index.ts` |
+| Types | `src/shared/types/models.ts` |
+| UI | `src/renderer/components/layout/AppLayout.tsx`, `src/renderer/components/request/*.tsx`, `src/renderer/components/response/ResponsePanel.tsx` |
+| Stores | `src/renderer/stores/appStore.ts`, `src/renderer/stores/environmentStore.ts`, `src/renderer/stores/collectionStore.ts` |
+| Build | `electron-vite.config.ts`, `build/notarize.js`, `build/entitlements.mac.plist` |
 
-- **IPC pattern**: Renderer calls `window.api.xxx()` → preload invokes IPC → main process handlers in `src/main/ipc/index.ts`
-- **State management**: Zustand stores in renderer, synced with main process via IPC
-- **HTTP execution**: Done in main process using axios to avoid CORS issues
+## Architecture
 
-## Next Steps for Phase 2
-
-1. Install Monaco Editor: Already in dependencies, need to add `@monaco-editor/react` component
-2. Create CodeEditor component wrapping Monaco
-3. Replace textarea in BodyEditor with Monaco
-4. Add JSON validation in body editor
-5. Enhance ResponsePanel with Monaco for body display
-6. Add variable highlighting utility
-
-Read the full plan at the top of the conversation or in the plan file for complete implementation phases.
+- **IPC**: Renderer → `window.api.xxx()` → preload → main process handlers in `src/main/ipc/index.ts`
+- **State**: Zustand stores in renderer, synced with main process via IPC
+- **HTTP**: Executed in main process (axios) to avoid CORS
+- **Scripts**: Run in Node's VM sandbox, 5s timeout, environment updates persisted via `applyScriptUpdates()`
+- **WebSocket/SSE**: Managed in main process, events pushed to renderer via IPC

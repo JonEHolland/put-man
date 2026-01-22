@@ -3,11 +3,20 @@ import type {
   Collection,
   Folder,
   Request,
+  HttpRequest,
+  WebSocketRequest,
+  WebSocketMessage,
+  WebSocketConnectionStatus,
+  SSERequest,
+  SSEEvent,
+  SSEConnectionStatus,
   Environment,
   Response,
   CollectionRequest,
   HistoryEntry,
-  ElectronAPI
+  ElectronAPI,
+  CodeLanguage,
+  OAuth2Config
 } from '../shared/types/models'
 
 const api: ElectronAPI = {
@@ -36,6 +45,8 @@ const api: ElectronAPI = {
     updateRequest: (id: string, request: Request) =>
       ipcRenderer.invoke('db:updateRequest', id, request),
     deleteRequest: (id: string) => ipcRenderer.invoke('db:deleteRequest', id),
+    moveRequest: (id: string, targetFolderId: string | null) =>
+      ipcRenderer.invoke('db:moveRequest', id, targetFolderId),
 
     // Environments
     getEnvironments: () => ipcRenderer.invoke('db:getEnvironments'),
@@ -91,6 +102,73 @@ const api: ElectronAPI = {
     collection: (collectionId: string, format: 'native' | 'postman') =>
       ipcRenderer.invoke('export:collection', collectionId, format),
     curl: (request: Request) => ipcRenderer.invoke('export:curl', request)
+  },
+
+  codeGen: {
+    generate: (language: CodeLanguage, request: HttpRequest, includeComments?: boolean) =>
+      ipcRenderer.invoke('codeGen:generate', language, request, includeComments),
+    getSupportedLanguages: () => ipcRenderer.invoke('codeGen:getSupportedLanguages')
+  },
+
+  oauth2: {
+    startAuthCodeFlow: (config: OAuth2Config, environment?: Environment) =>
+      ipcRenderer.invoke('oauth2:authCodeFlow', config, environment),
+    clientCredentialsFlow: (config: OAuth2Config, environment?: Environment) =>
+      ipcRenderer.invoke('oauth2:clientCredentials', config, environment),
+    refreshToken: (config: OAuth2Config, environment?: Environment) =>
+      ipcRenderer.invoke('oauth2:refreshToken', config, environment)
+  },
+
+  websocket: {
+    connect: (connectionId: string, request: WebSocketRequest, environment?: Environment) =>
+      ipcRenderer.invoke('websocket:connect', connectionId, request, environment),
+    disconnect: (connectionId: string) =>
+      ipcRenderer.invoke('websocket:disconnect', connectionId),
+    send: (connectionId: string, message: string) =>
+      ipcRenderer.invoke('websocket:send', connectionId, message),
+    onMessage: (callback: (connectionId: string, message: WebSocketMessage) => void) => {
+      const listener = (_event: Electron.IpcRendererEvent, connId: string, msg: WebSocketMessage) => {
+        callback(connId, msg)
+      }
+      ipcRenderer.on('websocket:message', listener)
+      return () => {
+        ipcRenderer.removeListener('websocket:message', listener)
+      }
+    },
+    onStatusChange: (callback: (connectionId: string, status: WebSocketConnectionStatus, error?: string) => void) => {
+      const listener = (_event: Electron.IpcRendererEvent, connId: string, status: WebSocketConnectionStatus, error?: string) => {
+        callback(connId, status, error)
+      }
+      ipcRenderer.on('websocket:statusChange', listener)
+      return () => {
+        ipcRenderer.removeListener('websocket:statusChange', listener)
+      }
+    }
+  },
+
+  sse: {
+    connect: (connectionId: string, request: SSERequest, environment?: Environment) =>
+      ipcRenderer.invoke('sse:connect', connectionId, request, environment),
+    disconnect: (connectionId: string) =>
+      ipcRenderer.invoke('sse:disconnect', connectionId),
+    onEvent: (callback: (connectionId: string, event: SSEEvent) => void) => {
+      const listener = (_event: Electron.IpcRendererEvent, connId: string, sseEvent: SSEEvent) => {
+        callback(connId, sseEvent)
+      }
+      ipcRenderer.on('sse:event', listener)
+      return () => {
+        ipcRenderer.removeListener('sse:event', listener)
+      }
+    },
+    onStatusChange: (callback: (connectionId: string, status: SSEConnectionStatus, error?: string) => void) => {
+      const listener = (_event: Electron.IpcRendererEvent, connId: string, status: SSEConnectionStatus, error?: string) => {
+        callback(connId, status, error)
+      }
+      ipcRenderer.on('sse:statusChange', listener)
+      return () => {
+        ipcRenderer.removeListener('sse:statusChange', listener)
+      }
+    }
   }
 }
 

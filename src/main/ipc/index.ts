@@ -8,7 +8,12 @@ import {
   historyRepo
 } from '../database/repositories'
 import { httpService } from '../services/http'
-import type { Collection, Folder, Request, Environment, Response } from '../../shared/types/models'
+import { importExportService } from '../services/importExport'
+import { codeGenerationService, type CodeLanguage } from '../services/codeGeneration'
+import { oauth2Service } from '../services/oauth2'
+import { websocketService } from '../services/websocket'
+import { sseService } from '../services/sse'
+import type { Collection, Folder, Request, HttpRequest, WebSocketRequest, SSERequest, Environment, Response, OAuth2Config } from '../../shared/types/models'
 
 export function registerIpcHandlers(): void {
   // Collections
@@ -66,6 +71,10 @@ export function registerIpcHandlers(): void {
 
   ipcMain.handle('db:deleteRequest', async (_, id: string) => {
     requestsRepo.delete(id)
+  })
+
+  ipcMain.handle('db:moveRequest', async (_, id: string, targetFolderId: string | null) => {
+    return requestsRepo.move(id, targetFolderId)
   })
 
   // Environments
@@ -142,5 +151,59 @@ export function registerIpcHandlers(): void {
 
     await writeFile(result.filePath, content, 'utf-8')
     return result.filePath
+  })
+
+  // Import/Export
+  ipcMain.handle('import:postmanCollection', async (_, filePath: string) => {
+    const content = await readFile(filePath, 'utf-8')
+    return importExportService.importPostmanCollection(content)
+  })
+
+  ipcMain.handle('export:collection', async (_, collectionId: string, format: 'native' | 'postman') => {
+    return importExportService.exportCollection(collectionId, format)
+  })
+
+  // Code Generation
+  ipcMain.handle('codeGen:generate', async (_, language: CodeLanguage, request: HttpRequest, includeComments?: boolean) => {
+    return codeGenerationService.generateCode(language, { request, includeComments })
+  })
+
+  ipcMain.handle('codeGen:getSupportedLanguages', async () => {
+    return codeGenerationService.supportedLanguages
+  })
+
+  // OAuth2
+  ipcMain.handle('oauth2:authCodeFlow', async (_, config: OAuth2Config, environment?: Environment) => {
+    return oauth2Service.startAuthCodeFlow(config, environment)
+  })
+
+  ipcMain.handle('oauth2:clientCredentials', async (_, config: OAuth2Config, environment?: Environment) => {
+    return oauth2Service.clientCredentialsFlow(config, environment)
+  })
+
+  ipcMain.handle('oauth2:refreshToken', async (_, config: OAuth2Config, environment?: Environment) => {
+    return oauth2Service.refreshToken(config, environment)
+  })
+
+  // WebSocket
+  ipcMain.handle('websocket:connect', async (_, connectionId: string, request: WebSocketRequest, environment?: Environment) => {
+    return websocketService.connect(connectionId, request, environment)
+  })
+
+  ipcMain.handle('websocket:disconnect', async (_, connectionId: string) => {
+    return websocketService.disconnect(connectionId)
+  })
+
+  ipcMain.handle('websocket:send', async (_, connectionId: string, message: string) => {
+    return websocketService.send(connectionId, message)
+  })
+
+  // SSE
+  ipcMain.handle('sse:connect', async (_, connectionId: string, request: SSERequest, environment?: Environment) => {
+    return sseService.connect(connectionId, request, environment)
+  })
+
+  ipcMain.handle('sse:disconnect', async (_, connectionId: string) => {
+    return sseService.disconnect(connectionId)
   })
 }
