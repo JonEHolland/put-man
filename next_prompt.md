@@ -15,6 +15,8 @@ When you encounter difficulties:
 4. **Never** deviate from the plan by choosing an "easier" alternative
 5. ALWAYS MAKE SURE THE APP STARTS WITHOUT ERRORS!
 6. ALWAYS COMMIT AND PUSH BEFORE STARTING A NEW FEATURE.
+7. ALWAYS MAKE SURE ALL TESTS AND E2E TESTS PASS.
+8. If you make UX changes, use playwright to take a new promotional screenshot and add it to readme.md so people can see the UI on github.
 
 **Always include this warning in the next_prompt.md for future agents.**
 
@@ -30,39 +32,38 @@ All core phases are **COMPLETE**:
 - Code Generation (cURL, JS Fetch/Axios, Python, Go, PHP)
 - Import/Export (Postman Collection v2.1)
 - **GraphQL support** with query/variables editor and introspection
+- **Native macOS menu bar** with keyboard shortcuts
 - 122 unit tests passing across 8 test files
 - macOS code signing configured
 - E2E Testing Framework with Playwright for Electron
 
 ## What Was Just Completed
 
-**GraphQL Support**: Added full GraphQL request capability:
+**Native macOS Menu Bar**: Added proper Electron application menu:
 
-- GraphQL service in main process (`src/main/services/graphql.ts`)
-  - Send GraphQL queries/mutations with variables
-  - Schema introspection support
-  - Authentication (Basic, Bearer, API Key, OAuth2)
-  - Pre/post request scripts support
-  - Environment variable interpolation
-- GraphQL panel UI (`src/renderer/components/graphql/GraphQLPanel.tsx`)
-  - Query editor with Monaco
-  - Variables editor (JSON)
-  - Headers and auth configuration tabs
-  - Schema introspection button
-- New Request dropdown in sidebar for creating HTTP, GraphQL, WebSocket, or SSE requests
-- IPC handlers for `graphql:send`, `graphql:introspect`, `graphql:cancel`
-- Fixed ws/bufferutil dependency issue by properly installing bufferutil as regular dependency
+- Created `src/main/menu.ts` with standard macOS menu structure
+- File menu: New Request (Cmd+T), New Collection (Cmd+Shift+N), Import (Cmd+I), Export (Cmd+E), Close Tab (Cmd+W)
+- Edit menu: Standard undo/redo/cut/copy/paste operations with native role bindings
+- View menu: Reload, zoom controls, fullscreen toggle, DevTools (dev only)
+- Window menu: Minimize, zoom, standard macOS window management
+- Help menu: Links to documentation and issue reporting
+- Added menu event listeners in preload (`src/preload/index.ts`) for menu→renderer communication
+- Created `ImportExportModal.tsx` component for import/export dialogs triggered from menu
+- Updated `AppLayout.tsx` to handle menu events and display import/export modal
+- Updated type definitions in `models.ts` for menu API
 
 ## What to Work on Next
 
 Potential next steps:
 
-1. **gRPC Support**: Similar to GraphQL - add gRPC service, panel, and proto file loading. Type definitions already exist in models.ts.
-2. **Fix Remaining E2E Tests**: Refine selectors for failing tests (environment manager, history, code generation). Add data-testid attributes to components if needed.
-3. **GraphQL Enhancements**: Schema explorer sidebar, autocomplete in query editor, query history
-4. **Performance Optimization**: Virtualized lists for large collections/history, response streaming, code splitting
-5. **Production Readiness**: Auto-updates (electron-updater), error reporting, user documentation
-6. **WebSocket/SSE Enhancements**: Binary messages, filtering/search, save to collections
+1. **App Icon**: Create and configure a proper macOS app icon (.icns file in build/ directory)
+2. **gRPC Support**: Similar to GraphQL - add gRPC service, panel, and proto file loading. Type definitions already exist in models.ts.
+3. **Fix Remaining E2E Tests**: Refine selectors for failing tests (environment manager, history, code generation). Add data-testid attributes to components if needed.
+4. **GraphQL Enhancements**: Schema explorer sidebar, autocomplete in query editor, query history
+5. **Performance Optimization**: Virtualized lists for large collections/history, response streaming, code splitting
+6. **Production Readiness**: Auto-updates (electron-updater), error reporting, user documentation
+7. **WebSocket/SSE Enhancements**: Binary messages, filtering/search, save to collections
+8. **Fix TypeScript Errors**: Several pre-existing TypeScript strict mode errors need addressing
 
 ## Running the App
 
@@ -93,7 +94,7 @@ npm run package:mac:signed  # Package with signing (requires APPLE_ID, APPLE_APP
 
 | Area | Files |
 |------|-------|
-| Main Process | `src/main/index.ts`, `src/main/ipc/index.ts` |
+| Main Process | `src/main/index.ts`, `src/main/ipc/index.ts`, `src/main/menu.ts` |
 | Database | `src/main/database/init.ts`, `src/main/database/repositories.ts` |
 | Services | `src/main/services/http.ts`, `src/main/services/graphql.ts`, `src/main/services/scriptRunner.ts`, `src/main/services/oauth2.ts`, `src/main/services/websocket.ts`, `src/main/services/sse.ts`, `src/main/services/codeGeneration.ts`, `src/main/services/importExport.ts` |
 | Preload | `src/preload/index.ts` |
