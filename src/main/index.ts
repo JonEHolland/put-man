@@ -5,6 +5,7 @@ import { initDatabase, closeDatabase } from './database/init'
 import { registerIpcHandlers } from './ipc'
 import { websocketService } from './services/websocket'
 import { sseService } from './services/sse'
+import { createMenu } from './menu'
 
 let mainWindow: BrowserWindow | null = null
 
@@ -15,7 +16,6 @@ function createWindow(): void {
     minWidth: 1000,
     minHeight: 600,
     show: false,
-    autoHideMenuBar: true,
     titleBarStyle: 'hiddenInset',
     trafficLightPosition: { x: 18, y: 14 },
     webPreferences: {
@@ -41,6 +41,9 @@ function createWindow(): void {
   } else {
     mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
   }
+
+  // Create the application menu
+  createMenu(mainWindow)
 }
 
 function initApp(): void {

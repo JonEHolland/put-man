@@ -170,6 +170,44 @@ const api: ElectronAPI = {
         ipcRenderer.removeListener('sse:statusChange', listener)
       }
     }
+  },
+
+  menu: {
+    onNewRequest: (callback: () => void) => {
+      const listener = () => callback()
+      ipcRenderer.on('menu:new-request', listener)
+      return () => {
+        ipcRenderer.removeListener('menu:new-request', listener)
+      }
+    },
+    onNewCollection: (callback: () => void) => {
+      const listener = () => callback()
+      ipcRenderer.on('menu:new-collection', listener)
+      return () => {
+        ipcRenderer.removeListener('menu:new-collection', listener)
+      }
+    },
+    onImport: (callback: () => void) => {
+      const listener = () => callback()
+      ipcRenderer.on('menu:import', listener)
+      return () => {
+        ipcRenderer.removeListener('menu:import', listener)
+      }
+    },
+    onExport: (callback: () => void) => {
+      const listener = () => callback()
+      ipcRenderer.on('menu:export', listener)
+      return () => {
+        ipcRenderer.removeListener('menu:export', listener)
+      }
+    },
+    onCloseTab: (callback: () => void) => {
+      const listener = () => callback()
+      ipcRenderer.on('menu:close-tab', listener)
+      return () => {
+        ipcRenderer.removeListener('menu:close-tab', listener)
+      }
+    }
   }
 }
 

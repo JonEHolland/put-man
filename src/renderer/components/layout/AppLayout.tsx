@@ -1,4 +1,4 @@
-import { useEffect, useCallback } from 'react'
+import { useEffect, useCallback, useState } from 'react'
 import Sidebar from './Sidebar'
 import TabBar from './TabBar'
 import RequestPanel from '../request/RequestPanel'
@@ -7,19 +7,57 @@ import GraphQLPanel from '../graphql/GraphQLPanel'
 import WebSocketPanel from '../websocket/WebSocketPanel'
 import SSEPanel from '../sse/SSEPanel'
 import ToastContainer from '../common/Toast'
+import ImportExportModal from '../common/ImportExportModal'
 import { useAppStore } from '../../stores/appStore'
 import { useCollectionStore } from '../../stores/collectionStore'
 import { useEnvironmentStore } from '../../stores/environmentStore'
 
 export default function AppLayout() {
   const { activeTab, tabs, createNewTab, closeTab, sendRequest, sendGraphQLRequest, duplicateTab } = useAppStore()
-  const { loadCollections } = useCollectionStore()
+  const { loadCollections, createCollection } = useCollectionStore()
   const { loadEnvironments, activeEnvironment } = useEnvironmentStore()
+  const [showImportExport, setShowImportExport] = useState<'import' | 'export' | null>(null)
 
   useEffect(() => {
     loadCollections()
     loadEnvironments()
   }, [loadCollections, loadEnvironments])
+
+  // Menu event listeners
+  useEffect(() => {
+    const unsubNewRequest = window.api.menu.onNewRequest(() => {
+      createNewTab()
+    })
+
+    const unsubNewCollection = window.api.menu.onNewCollection(async () => {
+      const name = prompt('Enter collection name:')
+      if (name?.trim()) {
+        await createCollection(name.trim())
+      }
+    })
+
+    const unsubImport = window.api.menu.onImport(() => {
+      setShowImportExport('import')
+    })
+
+    const unsubExport = window.api.menu.onExport(() => {
+      setShowImportExport('export')
+    })
+
+    const unsubCloseTab = window.api.menu.onCloseTab(() => {
+      if (activeTab) {
+        closeTab(activeTab)
+      }
+    })
+
+    return () => {
+      unsubNewRequest()
+      unsubNewCollection()
+      unsubImport()
+      unsubExport()
+      unsubCloseTab()
+    }
+  }, [activeTab, closeTab, createNewTab, createCollection])
 
   // Keyboard shortcuts
   const handleKeyDown = useCallback(
@@ -121,6 +159,12 @@ export default function AppLayout() {
         </div>
       </div>
       <ToastContainer />
+      {showImportExport && (
+        <ImportExportModal
+          mode={showImportExport}
+          onClose={() => setShowImportExport(null)}
+        />
+      )}
     </>
   )
 }

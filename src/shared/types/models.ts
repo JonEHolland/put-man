@@ -390,6 +390,15 @@ export interface ElectronAPI {
     onEvent: (callback: (connectionId: string, event: SSEEvent) => void) => () => void
     onStatusChange: (callback: (connectionId: string, status: SSEConnectionStatus, error?: string) => void) => () => void
   }
+
+  // Menu events
+  menu: {
+    onNewRequest: (callback: () => void) => () => void
+    onNewCollection: (callback: () => void) => () => void
+    onImport: (callback: () => void) => () => void
+    onExport: (callback: () => void) => () => void
+    onCloseTab: (callback: () => void) => () => void
+  }
 }
 
 declare global {
