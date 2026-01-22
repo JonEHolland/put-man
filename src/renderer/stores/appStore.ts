@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { v4 as uuidv4 } from 'uuid'
-import type { Tab, Request, HttpRequest, GraphQLRequest, WebSocketRequest, SSERequest, Environment, Response } from '../../shared/types/models'
+import type { Tab, Request, HttpRequest, GraphQLRequest, GrpcRequest, WebSocketRequest, SSERequest, Environment, Response } from '../../shared/types/models'
 import { useToastStore } from './toastStore'
 import { useEnvironmentStore } from './environmentStore'
 
@@ -29,6 +29,23 @@ function createNewGraphQLRequest(): GraphQLRequest {
     query: '',
     variables: '',
     headers: [],
+    auth: { type: 'none' },
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  }
+}
+
+function createNewGrpcRequest(): GrpcRequest {
+  return {
+    id: uuidv4(),
+    name: 'gRPC',
+    type: 'grpc',
+    url: '',
+    protoFile: undefined,
+    serviceName: undefined,
+    methodName: undefined,
+    message: '{}',
+    metadata: [],
     auth: { type: 'none' },
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString()
@@ -64,6 +81,17 @@ function createNewGraphQLTab(): Tab {
   return {
     id: uuidv4(),
     title: 'GraphQL',
+    request,
+    isDirty: false,
+    isLoading: false
+  }
+}
+
+function createNewGrpcTab(): Tab {
+  const request = createNewGrpcRequest()
+  return {
+    id: uuidv4(),
+    title: 'gRPC',
     request,
     isDirty: false,
     isLoading: false
@@ -123,6 +151,7 @@ interface AppState {
   // Tab actions
   createNewTab: () => void
   createGraphQLTab: () => void
+  createGrpcTab: () => void
   createWebSocketTab: () => void
   createSSETab: () => void
   closeTab: (id: string) => void
@@ -140,6 +169,7 @@ interface AppState {
   cancelRequest: (tabId: string) => void
   sendGraphQLRequest: (tabId: string, environment?: Environment | null) => Promise<void>
   cancelGraphQLRequest: (tabId: string) => void
+  sendGrpcRequest: (tabId: string, environment?: Environment | null) => Promise<void>
 }
 
 export const useAppStore = create<AppState>((set, get) => ({
@@ -156,6 +186,14 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   createGraphQLTab: () => {
     const newTab = createNewGraphQLTab()
+    set((state) => ({
+      tabs: [...state.tabs, newTab],
+      activeTab: newTab.id
+    }))
+  },
+
+  createGrpcTab: () => {
+    const newTab = createNewGrpcTab()
     set((state) => ({
       tabs: [...state.tabs, newTab],
       activeTab: newTab.id
@@ -482,6 +520,75 @@ export const useAppStore = create<AppState>((set, get) => ({
       })
       useToastStore.getState().info('Request cancelled')
       get().updateTab(tabId, { isLoading: false })
+    }
+  },
+
+  sendGrpcRequest: async (tabId: string, environment?: Environment | null) => {
+    const { tabs, updateTab } = get()
+    const tab = tabs.find((t) => t.id === tabId)
+    if (!tab) return
+
+    const grpcRequest = tab.request as GrpcRequest
+    if (!grpcRequest.url) {
+      useToastStore.getState().warning('Please enter a server address')
+      return
+    }
+
+    if (!grpcRequest.protoFile) {
+      useToastStore.getState().warning('Please load a .proto file first')
+      return
+    }
+
+    if (!grpcRequest.serviceName || !grpcRequest.methodName) {
+      useToastStore.getState().warning('Please select a service and method')
+      return
+    }
+
+    // Set loading state
+    updateTab(tabId, { isLoading: true })
+
+    try {
+      const response: Response = await window.api.grpc.send(
+        grpcRequest,
+        environment || undefined
+      )
+
+      updateTab(tabId, { response, isLoading: false })
+
+      // Apply environment updates from scripts
+      const scriptUpdates = {
+        ...(response.preRequestScriptResult?.environmentUpdates || {}),
+        ...(response.testScriptResult?.environmentUpdates || {})
+      }
+      if (Object.keys(scriptUpdates).length > 0) {
+        await useEnvironmentStore.getState().applyScriptUpdates(scriptUpdates)
+      }
+
+      // Add to history
+      await window.api.db.addToHistory(tab.request, response)
+
+      // Show success/error toast
+      if (response.status === 200) {
+        useToastStore.getState().success('gRPC call successful')
+      } else if (response.status === 0 && response.statusText) {
+        useToastStore.getState().error(response.statusText)
+      }
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'gRPC call failed'
+      useToastStore.getState().error(errorMessage)
+
+      const errorResponse: Response = {
+        id: uuidv4(),
+        requestId: tab.request.id,
+        status: 0,
+        statusText: errorMessage,
+        headers: {},
+        body: errorMessage,
+        size: 0,
+        time: 0,
+        timestamp: new Date().toISOString()
+      }
+      updateTab(tabId, { response: errorResponse, isLoading: false })
     }
   }
 }))

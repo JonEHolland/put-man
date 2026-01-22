@@ -9,12 +9,13 @@ import {
 } from '../database/repositories'
 import { httpService } from '../services/http'
 import { graphqlService } from '../services/graphql'
+import { grpcService } from '../services/grpc'
 import { importExportService } from '../services/importExport'
 import { codeGenerationService, type CodeLanguage } from '../services/codeGeneration'
 import { oauth2Service } from '../services/oauth2'
 import { websocketService } from '../services/websocket'
 import { sseService } from '../services/sse'
-import type { Collection, Folder, Request, HttpRequest, GraphQLRequest, WebSocketRequest, SSERequest, Environment, Response, OAuth2Config, KeyValuePair } from '../../shared/types/models'
+import type { Collection, Folder, Request, HttpRequest, GraphQLRequest, GrpcRequest, WebSocketRequest, SSERequest, Environment, Response, OAuth2Config, KeyValuePair } from '../../shared/types/models'
 
 export function registerIpcHandlers(): void {
   // Collections
@@ -132,6 +133,19 @@ export function registerIpcHandlers(): void {
 
   ipcMain.handle('graphql:cancel', async (_, requestId: string) => {
     graphqlService.cancel(requestId)
+  })
+
+  // gRPC
+  ipcMain.handle('grpc:send', async (_, request: GrpcRequest, environment?: Environment) => {
+    return grpcService.send(request, environment)
+  })
+
+  ipcMain.handle('grpc:loadProto', async (_, filePath: string) => {
+    return grpcService.loadProto(filePath)
+  })
+
+  ipcMain.handle('grpc:reflect', async (_, url: string) => {
+    return grpcService.reflect(url)
   })
 
   // File operations

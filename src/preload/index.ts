@@ -4,6 +4,7 @@ import type {
   Folder,
   Request,
   HttpRequest,
+  GrpcRequest,
   WebSocketRequest,
   WebSocketMessage,
   WebSocketConnectionStatus,
@@ -79,7 +80,7 @@ const api: ElectronAPI = {
   },
 
   grpc: {
-    send: (request: Request, environment?: Environment) =>
+    send: (request: GrpcRequest, environment?: Environment) =>
       ipcRenderer.invoke('grpc:send', request, environment),
     loadProto: (filePath: string) => ipcRenderer.invoke('grpc:loadProto', filePath),
     reflect: (url: string) => ipcRenderer.invoke('grpc:reflect', url)

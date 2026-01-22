@@ -4,6 +4,7 @@ import TabBar from './TabBar'
 import RequestPanel from '../request/RequestPanel'
 import ResponsePanel from '../response/ResponsePanel'
 import GraphQLPanel from '../graphql/GraphQLPanel'
+import GrpcPanel from '../grpc/GrpcPanel'
 import WebSocketPanel from '../websocket/WebSocketPanel'
 import SSEPanel from '../sse/SSEPanel'
 import ToastContainer from '../common/Toast'
@@ -13,7 +14,7 @@ import { useCollectionStore } from '../../stores/collectionStore'
 import { useEnvironmentStore } from '../../stores/environmentStore'
 
 export default function AppLayout() {
-  const { activeTab, tabs, createNewTab, closeTab, sendRequest, sendGraphQLRequest, duplicateTab } = useAppStore()
+  const { activeTab, tabs, createNewTab, closeTab, sendRequest, sendGraphQLRequest, sendGrpcRequest, duplicateTab } = useAppStore()
   const { loadCollections, createCollection } = useCollectionStore()
   const { loadEnvironments, activeEnvironment } = useEnvironmentStore()
   const [showImportExport, setShowImportExport] = useState<'import' | 'export' | null>(null)
@@ -87,6 +88,8 @@ export default function AppLayout() {
           const currentTab = tabs.find((t) => t.id === activeTab)
           if (currentTab?.request.type === 'graphql') {
             sendGraphQLRequest(activeTab, activeEnvironment)
+          } else if (currentTab?.request.type === 'grpc') {
+            sendGrpcRequest(activeTab, activeEnvironment)
           } else if (currentTab?.request.type === 'http') {
             sendRequest(activeTab, activeEnvironment)
           }
@@ -113,7 +116,7 @@ export default function AppLayout() {
         return
       }
     },
-    [activeTab, tabs, createNewTab, closeTab, sendRequest, sendGraphQLRequest, duplicateTab, activeEnvironment]
+    [activeTab, tabs, createNewTab, closeTab, sendRequest, sendGraphQLRequest, sendGrpcRequest, duplicateTab, activeEnvironment]
   )
 
   useEffect(() => {
@@ -146,6 +149,11 @@ export default function AppLayout() {
                   <GraphQLPanel tab={currentTab} />
                   <ResponsePanel request={currentTab.request} response={currentTab.response} />
                 </>
+              ) : currentTab.request.type === 'grpc' ? (
+                <>
+                  <GrpcPanel tab={currentTab} />
+                  <ResponsePanel request={currentTab.request} response={currentTab.response} />
+                </>
               ) : (
                 <>
                   <RequestPanel tab={currentTab} />
@@ -170,7 +178,7 @@ export default function AppLayout() {
 }
 
 function EmptyState() {
-  const { createNewTab, createGraphQLTab, createWebSocketTab, createSSETab } = useAppStore()
+  const { createNewTab, createGraphQLTab, createGrpcTab, createWebSocketTab, createSSETab } = useAppStore()
 
   return (
     <div className="flex-1 flex items-center justify-center text-gray-500">
@@ -183,6 +191,9 @@ function EmptyState() {
           </button>
           <button className="btn btn-secondary" onClick={createGraphQLTab}>
             New GraphQL
+          </button>
+          <button className="btn btn-secondary" onClick={createGrpcTab}>
+            New gRPC
           </button>
           <button className="btn btn-secondary" onClick={createWebSocketTab}>
             New WebSocket
