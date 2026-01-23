@@ -20,7 +20,7 @@
       "entitlements": "build/entitlements.mac.plist",
       "entitlementsInherit": "build/entitlements.mac.inherit.plist"
     },
-    "afterSign": "build/notarize.js",
+    "afterSign": "build/notarize.cjs",
     "directories": {
       "output": "dist"
     },
@@ -34,6 +34,8 @@
   "scripts": {
     "dev": "electron-vite dev",
     "build": "electron-vite build",
+    "build:app": "electron-vite build && electron-builder --mac --dir -c.mac.target=dir -c.mac.identity=null -c.afterSign=build/noop.cjs",
+    "start": "open dist/mac-arm64/Put-Man.app",
     "preview": "electron-vite preview",
     "package": "electron-builder",
     "package:mac": "electron-builder --mac",

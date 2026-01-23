@@ -1,4 +1,4 @@
-import { app, Menu, shell, BrowserWindow, MenuItemConstructorOptions } from 'electron'
+import { Menu, shell, BrowserWindow, MenuItemConstructorOptions } from 'electron'
 import { is } from '@electron-toolkit/utils'
 
 export function createMenu(mainWindow: BrowserWindow): void {
@@ -9,7 +9,7 @@ export function createMenu(mainWindow: BrowserWindow): void {
     ...(isMac
       ? [
           {
-            label: app.name,
+            label: 'Put-Man',
             submenu: [
               { role: 'about' as const },
               { type: 'separator' as const },

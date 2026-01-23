@@ -40,20 +40,16 @@ All core phases are **COMPLETE**:
 
 ## What Was Just Completed
 
-**gRPC Support**: Added full gRPC client functionality:
+**App Branding Polish**: Fixed the app name and About dialog to show "Put-Man" instead of "Electron":
 
-- Created `src/main/services/grpc.ts` using `@grpc/grpc-js` and `protobufjs`
-- Proto file loading with service/method discovery
-- Service and method selection dropdowns in UI
-- Unary gRPC request execution with JSON message input
-- gRPC metadata (similar to HTTP headers) editor
-- Full auth support (basic, bearer, API key)
-- Pre/post request scripts with environment variable updates
-- Server reflection support (falls back to proto file if unavailable)
-- Created `src/renderer/components/grpc/GrpcPanel.tsx` and `MetadataEditor.tsx`
-- Added `createGrpcTab` and `sendGrpcRequest` to appStore
-- Integrated into AppLayout with keyboard shortcut (Cmd+Enter) support
-- Added "New gRPC" button to empty state
+- Set `app.name = 'Put-Man'` in main process before window creation
+- Configured About panel with proper app name, version, copyright, and website URL
+- Changed menu label to explicitly use "Put-Man" instead of `app.name`
+- Added `npm run build:app` script to create unpacked app bundle with properly named "Put-Man" binary
+- Added `npm run start` script to launch the built app
+- Renamed `build/notarize.js` to `build/notarize.cjs` for ESM compatibility
+- Created `build/noop.cjs` for unsigned dev builds
+- The menu bar, About dialog, and dock now show "Put-Man" correctly
 
 ## What to Work on Next
 
@@ -61,21 +57,24 @@ Potential next steps:
 
 1. **App Icon**: Create and configure a proper macOS app icon (.icns file in build/ directory)
 2. **Fix Remaining E2E Tests**: Refine selectors for failing tests (environment manager, history, code generation). Add data-testid attributes to components if needed.
-3. **GraphQL Enhancements**: Schema explorer sidebar, autocomplete in query editor, query history
-4. **gRPC Streaming**: Add support for server streaming, client streaming, and bidirectional streaming RPC methods
-5. **Performance Optimization**: Virtualized lists for large collections/history, response streaming, code splitting
-6. **Production Readiness**: Auto-updates (electron-updater), error reporting, user documentation
-7. **WebSocket/SSE Enhancements**: Binary messages, filtering/search, save to collections
-8. **Fix TypeScript Errors**: Several pre-existing TypeScript strict mode errors need addressing
+3. **Go on a bug hunt** Use Playwright to fully explore the app and find bugs, save all of the discovered bugs to bug_list.md for a future agent to work on.
+4. **GraphQL Enhancements**: Schema explorer sidebar, autocomplete in query editor, query history
+5. **gRPC Streaming**: Add support for server streaming, client streaming, and bidirectional streaming RPC methods
+6. **Performance Optimization**: Virtualized lists for large collections/history, response streaming, code splitting
+7. **Production Readiness**: Auto-updates (electron-updater), error reporting, user documentation
+8. **WebSocket/SSE Enhancements**: Binary messages, filtering/search, save to collections
+9. **Fix TypeScript Errors**: Several pre-existing TypeScript strict mode errors need addressing
 
 ## Running the App
 
 ```bash
-npm run dev           # Development
-npm run build         # Build
+npm run dev           # Development (menu bar shows "Electron")
+npm run build:app     # Build app bundle with proper "Put-Man" binary name
+npm run start         # Launch the built Put-Man.app
+npm run build         # Build JS output only (without app bundle)
 npm run test:run      # Run unit tests
 npm run test:e2e      # Run E2E tests (builds first)
-npm run package:mac   # Package (unsigned)
+npm run package:mac   # Package for distribution (unsigned)
 npm run package:mac:signed  # Package with signing (requires APPLE_ID, APPLE_APP_SPECIFIC_PASSWORD, APPLE_TEAM_ID env vars)
 ```
 
@@ -104,7 +103,7 @@ npm run package:mac:signed  # Package with signing (requires APPLE_ID, APPLE_APP
 | Types | `src/shared/types/models.ts` |
 | UI | `src/renderer/components/layout/AppLayout.tsx`, `src/renderer/components/request/*.tsx`, `src/renderer/components/graphql/GraphQLPanel.tsx`, `src/renderer/components/grpc/GrpcPanel.tsx`, `src/renderer/components/response/ResponsePanel.tsx` |
 | Stores | `src/renderer/stores/appStore.ts`, `src/renderer/stores/environmentStore.ts`, `src/renderer/stores/collectionStore.ts` |
-| Build | `electron-vite.config.ts`, `build/notarize.js`, `build/entitlements.mac.plist` |
+| Build | `electron-vite.config.ts`, `build/notarize.cjs`, `build/entitlements.mac.plist` |
 | E2E Tests | `e2e/electron-fixture.ts`, `e2e/app.spec.ts`, `e2e/advanced-features.spec.ts`, `playwright.config.ts` |
 
 ## Architecture

@@ -7,6 +7,21 @@ import { websocketService } from './services/websocket'
 import { sseService } from './services/sse'
 import { createMenu } from './menu'
 
+// Set app name early (before any windows are created)
+// This ensures the menu bar and About dialog show the correct name
+app.name = 'Put-Man'
+
+// Configure the About panel for macOS
+if (process.platform === 'darwin') {
+  app.setAboutPanelOptions({
+    applicationName: 'Put-Man',
+    applicationVersion: app.getVersion(),
+    copyright: '© 2024 Put-Man. A privacy-respecting API client.',
+    version: '', // Build number (empty to hide)
+    website: 'https://github.com/joneholland/put-man'
+  })
+}
+
 let mainWindow: BrowserWindow | null = null
 
 function createWindow(): void {
